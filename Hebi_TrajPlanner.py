@@ -218,6 +218,7 @@ class TrajPlanner:
         dt = 1 / 100  # 1 / 100
         t = step * dt
         traj = init_point[(leg_index * 3): (leg_index * 3 + 3)] + [(-1 + leg_index * 2) * 0.01 * t, (-1 + leg_index * 2) * 0.75 * t, (-1 + leg_index * 2) * 0.6 * t]
+        print(traj)
         return traj
 
 if __name__ == '__main__':
@@ -226,23 +227,39 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     # params
     tp = TrajPlanner()
-    step_len = 0.1
-    course = 0
-    rotation = 0
-    leg_index = 3
-    # compute trajectory
-    end_pose = tp._get_end_pose(step_len, course, rotation)[:, leg_index]
-    init_pose = - end_pose
-    traj_swing = np.zeros((tp.swing_dim, 3))
-    traj_stance = np.zeros((tp.stance_dim, 3))
-    for timestep in range(tp.traj_dim):
-        traj_swing[timestep] = tp._compute_traj(init_pose, end_pose, curve_type='swing', leg_index=leg_index, timestep=timestep)
-        traj_stance[timestep] = tp._compute_traj(end_pose, init_pose, curve_type='stance', leg_index=leg_index, timestep=timestep)
-    traj = np.vstack((traj_swing, traj_stance))
+    # step_len = 0.1
+    # course = 0
+    # rotation = 0
+    # leg_index = 3
+    # # compute trajectory
+    # end_pose = tp._get_end_pose(step_len, course, rotation)[:, leg_index]
+    # init_pose = - end_pose
+    # traj_swing = np.zeros((tp.swing_dim, 3))
+    # traj_stance = np.zeros((tp.stance_dim, 3))
+    # for timestep in range(tp.traj_dim):
+    #     traj_swing[timestep] = tp._compute_traj(init_pose, end_pose, curve_type='swing', leg_index=leg_index, timestep=timestep)
+    #     traj_stance[timestep] = tp._compute_traj(end_pose, init_pose, curve_type='stance', leg_index=leg_index, timestep=timestep)
+    # traj = np.vstack((traj_swing, traj_stance))
+    # # plot
+    # x = traj[:, 0]
+    # y = traj[:, 1]
+    # z = traj[:, 2]
+    # fig = plt.figure()
+    # ax = fig.add_subplot(projection='3d')
+    #
+    # ax.scatter(x, y, z, s=1)
+    # ax.set_xlabel('X axis')
+    # ax.set_ylabel('Y axis')
+    # ax.set_zlabel('Z axis')
+    # ax.set_aspect('equal', 'box')
+    # plt.show()
+    # pass
+
+    traj = tp.front_leg_jointspace_traj(step=400 , leg_index=0)
     # plot
-    x = traj[:, 0]
-    y = traj[:, 1]
-    z = traj[:, 2]
+    x = traj[0]
+    y = traj[1]
+    z = traj[2]
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
 

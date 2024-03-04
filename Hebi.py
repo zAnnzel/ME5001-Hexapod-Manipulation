@@ -229,6 +229,40 @@ class Hebi:
             self.env.step(traj_,sleep=0.02)
         return True
 
+    # def move_front_leg_jointspace(self, timestep):
+    #     self.is_moving = True
+    #     self.timestep = timestep
+    #     init_point = np.array([-0.46336853, -0.15668338, -0.31367825, # leg 0
+    #                             0.46336853,  0.15668338,  0.31367825, # leg 1
+    #                            -0.64025334, -0.32865358, -1.89880505,
+    #                             0.64025296,  0.3286524,   1.89880162,
+    #                            -0.27359199, -0.32446194, -1.80610188,
+    #                             0.27359199,  0.32446194,  1.80610188])
+    #     traj_1 = np.zeros((timestep, 3))
+    #     traj_2 = np.zeros((timestep, 3))
+    #     for step in range(timestep):
+    #         traj_1[step] = self.trajplanner.front_leg_jointspace_traj(step, leg_index=0)
+    #         traj_2[step] = self.trajplanner.front_leg_jointspace_traj(step, leg_index=1)
+    #         # traj_ = np.hstack((traj_1[step], init_point[3:9], traj_2[step],init_point[12:18]))
+    #         traj_ = np.hstack((traj_1[step], traj_2[step], init_point[6:18]))
+    #         print(traj_)
+    #         self.env.step(traj_)
+    #         # time.sleep(0.1)
+    #     # print(traj_1)
+    #     # x = traj_1[:, 0]
+    #     # y = traj_1[:, 1]
+    #     # z = traj_1[:, 2]
+    #     # fig = plt.figure()
+    #     # ax = fig.add_subplot(projection='3d')
+    #     #
+    #     # ax.scatter(x, y, z, s=1)
+    #     # ax.set_xlabel('X axis')
+    #     # ax.set_ylabel('Y axis')
+    #     # ax.set_zlabel('Z axis')
+    #     # ax.set_aspect('equal', 'box')
+    #     # plt.show()
+    #     return True
+
     def move_front_leg_jointspace(self, timestep):
         self.is_moving = True
         self.timestep = timestep
@@ -249,6 +283,7 @@ class Hebi:
                 traj_1[step] = self.trajplanner.front_leg_jointspace_traj(step, leg_index=0)
                 traj_2[step] = self.trajplanner.front_leg_jointspace_traj(step, leg_index=1)
                 traj_ = np.hstack((traj_1[step], traj_2[step], init_point[6:18]))
+                print(traj_)
                 torque = self.env.step(traj_)
                 torques.append(torque)
                 frame = p.getCameraImage(width=1280, height=960)[2]
@@ -262,12 +297,11 @@ class Hebi:
         plt.plot(range(timestep), torques[:,4], label='My')
         plt.plot(range(timestep), torques[:,5], label='Mz')
         plt.xlabel('Simulation Step')
-        plt.ylabel('Joint Torque')
+        plt.ylabel('Joint Torque(Nm)')
         plt.legend(loc='upper right')  # Display the legend
         plt.title('Joint Torque over Simulation Steps')
         plt.show()
         return torques
-        return True
 
 if __name__ == '__main__':
     from Hebi import Hebi

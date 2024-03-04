@@ -71,7 +71,6 @@ class HebiEnv:
             else:
                 time.sleep(sleep)
         return joint_torques[1]
-
     def close(self):
         '''
         Close the pybullet simulation, disable the real robot motors, and terminate the program
