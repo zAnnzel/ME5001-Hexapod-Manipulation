@@ -1,12 +1,17 @@
 from Hebi_TrajPlanner import TrajPlanner
+from Hebi_grasp import Grasper
 import pybullet as p
 from Hebi_Env import HebiEnv
 import numpy as np
 from functions import trans
 import matplotlib.pyplot as plt
 import hebi
+from scipy.integrate import quad
 import time
 import imageio
+import wandb
+
+wandb.init(project='Hebi-test', name='force-torque')
 
 class Hebi:
     def __init__(self, visualiser=True, camerafollow=True, real_robot_control=False, pybullet_on=True):
@@ -21,6 +26,7 @@ class Hebi:
         self.xmk, self.imu, self.hexapod, self.fbk_imu, self.fbk_hp, self.group_command, self.group_feedback = self.env.xmk, self.env.imu, self.env.hexapod, self.env.fbk_imu, self.env.fbk_hp, self.env.group_command, self.env.group_feedback
         
         self.trajplanner = TrajPlanner(neutralPos=self.eePos)
+        self.grasper = Grasper(neutralPos=self.eePos)
 
         self.max_step_len = 0.2 # maximum stride length in metre 最大步幅
         self.max_rotation = 20 # maximum turn angle in degrees 最大转弯角度
@@ -103,10 +109,8 @@ class Hebi:
             #     course -= rotation/2
             # else:
             #     course -= rotation
-            
 
         self.stop()
-
         self.smoothing = True
 
     def stop(self):
@@ -229,39 +233,6 @@ class Hebi:
             self.env.step(traj_,sleep=0.02)
         return True
 
-    # def move_front_leg_jointspace(self, timestep):
-    #     self.is_moving = True
-    #     self.timestep = timestep
-    #     init_point = np.array([-0.46336853, -0.15668338, -0.31367825, # leg 0
-    #                             0.46336853,  0.15668338,  0.31367825, # leg 1
-    #                            -0.64025334, -0.32865358, -1.89880505,
-    #                             0.64025296,  0.3286524,   1.89880162,
-    #                            -0.27359199, -0.32446194, -1.80610188,
-    #                             0.27359199,  0.32446194,  1.80610188])
-    #     traj_1 = np.zeros((timestep, 3))
-    #     traj_2 = np.zeros((timestep, 3))
-    #     for step in range(timestep):
-    #         traj_1[step] = self.trajplanner.front_leg_jointspace_traj(step, leg_index=0)
-    #         traj_2[step] = self.trajplanner.front_leg_jointspace_traj(step, leg_index=1)
-    #         # traj_ = np.hstack((traj_1[step], init_point[3:9], traj_2[step],init_point[12:18]))
-    #         traj_ = np.hstack((traj_1[step], traj_2[step], init_point[6:18]))
-    #         print(traj_)
-    #         self.env.step(traj_)
-    #         # time.sleep(0.1)
-    #     # print(traj_1)
-    #     # x = traj_1[:, 0]
-    #     # y = traj_1[:, 1]
-    #     # z = traj_1[:, 2]
-    #     # fig = plt.figure()
-    #     # ax = fig.add_subplot(projection='3d')
-    #     #
-    #     # ax.scatter(x, y, z, s=1)
-    #     # ax.set_xlabel('X axis')
-    #     # ax.set_ylabel('Y axis')
-    #     # ax.set_zlabel('Z axis')
-    #     # ax.set_aspect('equal', 'box')
-    #     # plt.show()
-    #     return True
 
     def move_front_leg_jointspace(self, timestep):
         self.is_moving = True
@@ -273,37 +244,67 @@ class Hebi:
                                -0.27359199, -0.32446194, -1.80610188,
                                 0.27359199,  0.32446194,  1.80610188])
         traj_1 = np.zeros((timestep, 3))
-        traj_2 = np.zeros((timestep, 3))
-        torques = []
+        joint1_forces = []
+        joint1_torques = []
+        joint2_forces = []
+        joint2_torques = []
+        joint3_forces = []
+        joint3_torques = []
         imageio.plugins.freeimage.download()
         output_file = "simulation.gif"
 
         with imageio.get_writer(output_file, mode="I") as writer:
             for step in range(timestep):
-                traj_1[step] = self.trajplanner.front_leg_jointspace_traj(step, leg_index=0)
-                traj_2[step] = self.trajplanner.front_leg_jointspace_traj(step, leg_index=1)
-                traj_ = np.hstack((traj_1[step], traj_2[step], init_point[6:18]))
-                print(traj_)
-                torque = self.env.step(traj_)
-                torques.append(torque)
-                frame = p.getCameraImage(width=1280, height=960)[2]
-                writer.append_data(frame)
-        torques = np.array(torques)
-        plt.plot(range(timestep), torques)
-        plt.plot(range(timestep), torques[:,0], label='Fx')
-        plt.plot(range(timestep), torques[:,1], label='Fy')
-        plt.plot(range(timestep), torques[:,2], label='Fz')
-        plt.plot(range(timestep), torques[:,3], label='Mx')
-        plt.plot(range(timestep), torques[:,4], label='My')
-        plt.plot(range(timestep), torques[:,5], label='Mz')
+                # traj_1[step] = self.grasper.cubic_interpolation_traj(step) # 三次多项式插值
+                # traj_1[step] = self.grasper.polynomial_interpolation_path(step) # 五次多项式插值
+                traj_1[step] = self.grasper.front_leg_jointspace_traj(step, leg_index=0)
+                # traj_dt = traj_1[step] - traj_1[step-1]
+                # traj_dt= (trajectory(t + dt)[0] - x) / dt, (trajectory(t + dt)[1] - y) / dt, (trajectory(t + dt)[2] - z) / dt
+                traj_ = np.hstack((traj_1[step], (-1) * traj_1[step], init_point[6:18]))
+                velocity, torque = self.env.step(traj_)
+                print(velocity)
+                joint1_torque = torque[0]
+                joint2_torque = torque[1]
+                joint3_torque = torque[2]
+
+                joint1_force = np.linalg.norm(joint1_torque[0:3])
+                joint1_torque = np.linalg.norm(joint1_torque[3:6])
+                joint2_force = np.linalg.norm(joint2_torque[0:3])
+                joint2_torque = np.linalg.norm(joint2_torque[3:6])
+                joint3_force = np.linalg.norm(joint3_torque[0:3])
+                joint3_torque = np.linalg.norm(joint3_torque[3:6])
+
+                power = abs(joint1_torque) * abs(velocity[0]) + abs(joint2_torque) * abs(velocity[1]) + abs(joint3_force) * abs(velocity[2])
+                # energy, _ = quad(power, start_time=0, end_time=1)
+
+                joint2_forces.append(joint2_force)
+                joint2_torques.append(joint2_torque)
+                # frame = p.getCameraImage(width=1280, height=960)[2]
+                # writer.append_data(frame)
+                wandb.log({
+                    "F1": joint1_force,
+                    "F2": joint2_force,
+                    "F3": joint3_force,
+                    "T1": joint1_torque,
+                    "T2": joint2_torque,
+                    "T3": joint3_torque,
+                    "Energy2": power
+                })
+            joint2_forces = np.array(joint2_forces)
+            joint2_torques = np.array(joint2_torques)
+        wandb.finish()
+        plt.plot(range(timestep), joint2_forces, label='Force')
+        plt.plot(range(timestep), joint2_torques, label='Torque')
         plt.xlabel('Simulation Step')
         plt.ylabel('Joint Torque(Nm)')
         plt.legend(loc='upper right')  # Display the legend
         plt.title('Joint Torque over Simulation Steps')
         plt.show()
-        return torques
+
 
 if __name__ == '__main__':
+
+    import wandb
     from Hebi import Hebi
     import time
     import numpy as np
@@ -350,8 +351,10 @@ if __name__ == '__main__':
     hebi.move_leg(waypoints, time_vector, total_time=1)
 
     # leg 1, 2
-    hebi.move_front_leg_jointspace(timestep=400)
+    hebi.move_front_leg_jointspace(timestep=100)
+
     time.sleep(10)
 
     hebi.stop()
     hebi.disconnect()
+

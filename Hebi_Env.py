@@ -51,6 +51,10 @@ class HebiEnv:
                     except:
                         pass
             p.enableJointForceTorqueSensor(self.HebiID, self.actuator[0], enableSensor=True)
+            p.enableJointForceTorqueSensor(self.HebiID, self.actuator[1], enableSensor=True)
+            p.enableJointForceTorqueSensor(self.HebiID, self.actuator[2], enableSensor=True)
+            p.enableJointForceTorqueSensor(self.HebiID, self.actuator[3], enableSensor=True)
+
             # pybullet control
             if self.pybullet_on:
                 p.setJointMotorControlArray(
@@ -59,7 +63,7 @@ class HebiEnv:
                     controlMode=p.POSITION_CONTROL, 
                     targetPositions=jointspace_command2bullet)
                 joint_states = p.getJointStates(self.HebiID, range(p.getNumJoints(self.HebiID)))
-                joint_forces = [state[3] for state in joint_states]
+                joint_velocity = [state[1] for state in joint_states]
                 joint_torques = [state[2] for state in joint_states]
                 p.stepSimulation()
                 if self.camerafollow:
@@ -70,7 +74,8 @@ class HebiEnv:
                 time.sleep(max(0, self.dt - t_step))
             else:
                 time.sleep(sleep)
-        return joint_torques[1]
+        return joint_velocity, joint_torques
+
     def close(self):
         '''
         Close the pybullet simulation, disable the real robot motors, and terminate the program
@@ -134,7 +139,7 @@ class HebiEnv:
         Hebi_init_orn = p.getQuaternionFromEuler([0,0,0])
         Hebi_file_path = os.path.abspath(os.path.dirname(__file__)) + '/urdf/hebi.urdf'
         # self.foundationID = p.loadURDF('/urdf/foundation.urdf', np.array([0.7, 0, 0]))
-        self.boxID = p.loadURDF('/urdf/box.urdf', np.array([0.7, 0, 0]))
+        # self.boxID = p.loadURDF('/urdf/box.urdf', np.array([0.7, 0, 0]))
         self.HebiID = p.loadURDF(Hebi_file_path, Hebi_init_pos, Hebi_init_orn)
         self.joint_num = p.getNumJoints(self.HebiID)
         self.actuator = [i for i in range(self.joint_num) if p.getJointInfo(self.HebiID,i)[2] != p.JOINT_FIXED]
