@@ -147,9 +147,9 @@ class TrajPlanner:
         jointspace_command = np.zeros(shape=(18,num_pos))
         # unify all waypoints to joint space
         for i in range(num_pos):
-            if np.shape(waypoints[i]) == (3,6): # input workspace command as waypoint
+            if np.shape(waypoints[i]) == (3,6):  # input workspace command as waypoint
                 _, jointspace_command[:,i] = solveIK(waypoints[i]) # discard the first output which is for pybullet environment
-            elif np.shape(waypoints[i]) == (18,): # input jointspace command as waypoint
+            elif np.shape(waypoints[i]) == (18,):  # input jointspace command as waypoint
                 jointspace_command[:,i] = waypoints[i]
             else:
                 raise ValueError('Command that Yuna cannot recognise')

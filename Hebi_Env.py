@@ -63,6 +63,7 @@ class HebiEnv:
                     controlMode=p.POSITION_CONTROL, 
                     targetPositions=jointspace_command2bullet)
                 joint_states = p.getJointStates(self.HebiID, range(p.getNumJoints(self.HebiID)))
+                joint_position = [state[0] for state in joint_states]
                 joint_velocity = [state[1] for state in joint_states]
                 joint_torques = [state[2] for state in joint_states]
                 p.stepSimulation()
@@ -74,7 +75,7 @@ class HebiEnv:
                 time.sleep(max(0, self.dt - t_step))
             else:
                 time.sleep(sleep)
-        return joint_velocity, joint_torques
+        return joint_position, joint_velocity, joint_torques
 
     def close(self):
         '''
@@ -135,10 +136,10 @@ class HebiEnv:
         p.setGravity(0, 0, self.gravity)
         p.changeDynamics(self.groundID, -1, lateralFriction=self.friction)
         # load Yuna robot
-        Hebi_init_pos = [0,0,0.5]
-        Hebi_init_orn = p.getQuaternionFromEuler([0,0,0])
-        Hebi_file_path = os.path.abspath(os.path.dirname(__file__)) + '/urdf/hebi.urdf'
-        # self.foundationID = p.loadURDF('/urdf/foundation.urdf', np.array([0.7, 0, 0]))
+        Hebi_init_pos = [0, 0, 0.5]
+        Hebi_init_orn = p.getQuaternionFromEuler([0, 0, 0])
+        Hebi_file_path = os.path.abspath(os.path.dirname(__file__)) + '/urdf/hebi-2.urdf'  # hebi无装配，heibi-1 带夹具，heibi-2 带物块
+        # self.foundationID = p.loadURDF('/urdf/foundation.urdf')
         # self.boxID = p.loadURDF('/urdf/box.urdf', np.array([0.7, 0, 0]))
         self.HebiID = p.loadURDF(Hebi_file_path, Hebi_init_pos, Hebi_init_orn)
         self.joint_num = p.getNumJoints(self.HebiID)
@@ -156,7 +157,7 @@ class HebiEnv:
         '''
         # parameters
         self.h = 0.12 #0.2249 # body height
-        self.eePos = np.array( [[0.51589,    0.51589,   0.0575,     0.0575,     -0.45839,   -0.45839],
+        self.eePos = np.array([[0.51589,    0.51589,   0.0575,     0.0575,     -0.45839,   -0.45839],
                                 [0.23145,   -0.23145,   0.5125,     -0.5125,    0.33105,    -0.33105],
                                 [-self.h,   -self.h,    -self.h,    -self.h,    -self.h,    -self.h]]) # neutral position for the robot
         init_pos = self.eePos.copy()
@@ -176,7 +177,7 @@ class HebiEnv:
             pos, orn = p.getBasePositionAndOrientation(self.HebiID)
             return pos, p.getEulerFromQuaternion(orn)
         cam_pos, cam_orn = _get_body_pose(self)
-        p.resetDebugVisualizerCamera(cameraDistance=2, cameraYaw=-225, cameraPitch=-35, cameraTargetPosition=cam_pos)
+        p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=-225, cameraPitch=-35, cameraTargetPosition=cam_pos)
 
     def _add_reference_line(self):
         '''

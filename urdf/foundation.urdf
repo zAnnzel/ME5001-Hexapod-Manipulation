@@ -1,14 +1,27 @@
 <robot name="foundation">
-    <link name="base_link">
-        <visual>
-            <geometry>
-                <box size="0.2 0.2 0.1" />
-            </geometry>
-        </visual>
-        <collision>
-            <geometry>
-                <box size="0.2 0.2 0.1" />
-            </geometry>
-        </collision>
-    </link>
+   <material name="blue">
+     <color rgba="0 0 1 1"/>
+   </material>
+
+  <link name="link1">
+    <inertial>
+      <origin rpy="0 0 0 " xyz="0.8 0 0.1"/>
+      <mass value="1.8476"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 1.57075" xyz="0.8 0 0.1"/>
+      <geometry>
+        <mesh filename="yuna_stl/object.STL"/>
+      </geometry>
+      <material name="blue">
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 1.57075" xyz="0.8 0 0.1"/>
+      <geometry>
+        <mesh filename="yuna_stl/object.STL"/>
+      </geometry>
+    </collision>
+  </link>
 </robot>
