@@ -269,7 +269,7 @@
   <link name="leg1__LAST_LINK">
     <inertial>
       <origin rpy="0 0 0" xyz="0.12121923 0 0.01723596"/>
-      <mass value="0.3"/>
+      <mass value="5"/>
       <inertia ixx="7.471E-05" ixy="0" ixz="7.798E-05" iyy="0.00331684" iyz="0" izz="0.0033262"/>
     </inertial>
     <visual>
@@ -926,7 +926,7 @@
   <link name="leg2__LAST_LINK">
     <inertial>
       <origin rpy="0 0 0" xyz="0.12121923 0 0.01723596"/>
-      <mass value="0.3"/>
+      <mass value="5"/>
       <inertia ixx="7.471E-05" ixy="0" ixz="7.798E-05" iyy="0.00331684" iyz="0" izz="0.0033262"/>
     </inertial>
     <visual>

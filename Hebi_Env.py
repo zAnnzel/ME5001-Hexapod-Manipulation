@@ -6,7 +6,10 @@ import time
 import robot_setup
 from robot_setup.hebiKinematics import *
 from functions import hebi2bullet, solveIK
+import wandb
 import matplotlib.pyplot as plt
+
+# wandb.init(project='Hebi-robot', name='Pos-Vel-Effort')
 
 class HebiEnv:
     def __init__(self, real_robot_control=True, pybullet_on=True, visualiser=True, camerafollow=True):
@@ -30,9 +33,9 @@ class HebiEnv:
         return: None
         '''
         # judge the input target position is workspace command or jointspace command
-        if np.shape(targetPositions) == (3,6): # workspace command
+        if np.shape(targetPositions) == (3, 6):  # workspace command
             jointspace_command2bullet, jointspace_command2hebi = solveIK(targetPositions)
-        elif np.shape(targetPositions) == (18,): # jointspace command
+        elif np.shape(targetPositions) == (18,):  # jointspace command
             jointspace_command2bullet, jointspace_command2hebi = hebi2bullet(targetPositions), targetPositions
         else:
             raise ValueError('Command that Yuna cannot recognise, please input either workspace command whose shape(targetPositions)=(3,6), or jointspace command whose shape(targetPositions)=(18,)')
@@ -43,20 +46,60 @@ class HebiEnv:
             if self.real_robot_control:
                 self.group_command.position = jointspace_command2hebi - 0.3 * self.error
                 self.hexapod.send_command(self.group_command)
+
                 while True:
                     try:
                         self.group_feedback = self.hexapod.get_next_feedback(reuse_fbk=self.group_feedback)
                         self.error = self.group_feedback.position - jointspace_command2hebi
+                        feedback_position = self.group_feedback.position
+                        feedback_velocity = self.group_feedback.velocity
+                        feedback_effort = self.group_feedback.effort
+                        # wandb.log({
+                        #     "command": jointspace_command2hebi,
+                        #     "Position": feedback_position[0:6],
+                        #     "Velocity": feedback_velocity[0:6],
+                        #     "Effort": feedback_effort
+                        # })
+
+                        # 保存数据
+                        data = [jointspace_command2hebi, feedback_position, feedback_velocity, feedback_effort]
+                        file_path = "data.txt"
+                        with open(file_path, 'a') as file:
+                            for item in data:
+                                file.write("%s\n" % item)
+
+                        # jointspace_command2hebi = np.array(jointspace_command2hebi)
+                        # with open("/data/jointspace_command2hebi.txt", 'a') as file:
+                        #     for item in jointspace_command2hebi:
+                        #         file.write("%s\n" % item)
+                        #
+                        # feedback_position = np.array(feedback_position)
+                        # with open("/data/feedback_position.txt", 'a') as file:
+                        #     for item in feedback_position:
+                        #         file.write("%s\n" % item)
+                        #
+                        # feedback_velocity = np.array(feedback_velocity)
+                        # with open("/data/feedback_velocity.txt", 'a') as file:
+                        #     for item in feedback_velocity:
+                        #         file.write("%s\n" % item)
+                        #
+                        # feedback_effort = np.array(feedback_effort)
+                        # with open("/data/feedback_effort.txt", 'a') as file:
+                        #     for item in feedback_effort:
+                        #         file.write("%s\n" % item)
+
                         break
                     except:
                         pass
-            p.enableJointForceTorqueSensor(self.HebiID, self.actuator[0], enableSensor=True)
-            p.enableJointForceTorqueSensor(self.HebiID, self.actuator[1], enableSensor=True)
-            p.enableJointForceTorqueSensor(self.HebiID, self.actuator[2], enableSensor=True)
-            p.enableJointForceTorqueSensor(self.HebiID, self.actuator[3], enableSensor=True)
+
+            # wandb.finish()
 
             # pybullet control
             if self.pybullet_on:
+                p.enableJointForceTorqueSensor(self.HebiID, self.actuator[0], enableSensor=True)
+                p.enableJointForceTorqueSensor(self.HebiID, self.actuator[1], enableSensor=True)
+                p.enableJointForceTorqueSensor(self.HebiID, self.actuator[2], enableSensor=True)
+                p.enableJointForceTorqueSensor(self.HebiID, self.actuator[3], enableSensor=True)
                 p.setJointMotorControlArray(
                     bodyIndex=self.HebiID,
                     jointIndices=self.actuator, 
@@ -138,7 +181,7 @@ class HebiEnv:
         # load Yuna robot
         Hebi_init_pos = [0, 0, 0.5]
         Hebi_init_orn = p.getQuaternionFromEuler([0, 0, 0])
-        Hebi_file_path = os.path.abspath(os.path.dirname(__file__)) + '/urdf/hebi-2.urdf'  # hebi无装配，heibi-1 带夹具，heibi-2 带物块
+        Hebi_file_path = os.path.abspath(os.path.dirname(__file__)) + '/urdf/hebi.urdf'  # hebi无装配，heibi-1 带夹具，heibi-2 带物块
         # self.foundationID = p.loadURDF('/urdf/foundation.urdf')
         # self.boxID = p.loadURDF('/urdf/box.urdf', np.array([0.7, 0, 0]))
         self.HebiID = p.loadURDF(Hebi_file_path, Hebi_init_pos, Hebi_init_orn)
@@ -156,7 +199,7 @@ class HebiEnv:
         :return: None
         '''
         # parameters
-        self.h = 0.12 #0.2249 # body height
+        self.h = 0.12  # 0.12  body height
         self.eePos = np.array([[0.51589,    0.51589,   0.0575,     0.0575,     -0.45839,   -0.45839],
                                 [0.23145,   -0.23145,   0.5125,     -0.5125,    0.33105,    -0.33105],
                                 [-self.h,   -self.h,    -self.h,    -self.h,    -self.h,    -self.h]]) # neutral position for the robot

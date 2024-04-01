@@ -59,9 +59,9 @@ def solveFK(jointspace_command2hebi): #求解正向运动学
     return workspace_command
 
 if __name__ == '__main__':
-    workspace_command = np.array([[0.87, 0.87, 0.23, 0.23, -0.4, -0.4],
-                                   [0.08, -0.08, 0.4, -0.4, 0.4, -0.4],
+    workspace_command = np.array([[0.85, 0.85, 0.23, 0.23, -0.4, -0.4],
+                                   [0.1, -0.1, 0.4, -0.4, 0.4, -0.4],
                                    [0, 0, -0.12, -0.12, -0.12, -0.12]])
-    jointspace_command2bullet,jointspace_command2hebi = solveIK(workspace_command)
+    jointspace_command2bullet,pos = solveIK(workspace_command)
+    init_point = np.hstack((pos[0], pos[4], pos[2:4], pos[1], pos[5:18]))
     print(jointspace_command2bullet)
-    print(jointspace_command2hebi)
