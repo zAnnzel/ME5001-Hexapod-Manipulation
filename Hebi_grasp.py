@@ -12,6 +12,7 @@ class Grasper:
         self.eePos = neutralPos  # neutral position for the robot
         self.eeAng = np.array([0., 0., 0., 0., 0., 0.,])  # the diviation of each leg from neutral position, use 0. to initiate a float type array
 
+    # 工作空间举起物体轨迹规划
     def front_leg_workspace_traj(self, step, leg_index):
         init_point = np.array([[0.85, 0.85, 0.23, 0.23, -0.4, -0.4],
                                [0.1, -0.1, 0.4, -0.4, 0.4, -0.4],
@@ -24,6 +25,7 @@ class Grasper:
         traj = init_point[:, leg_index] + [(1.414 / 4 * np.cos(t) - 1.414 / 4), 0, (1 / 4 * np.sin(t))]
         return traj
 
+    # 关节空间举起物体轨迹规划
     def front_leg_jointspace_traj(self, init_pos, step, leg_index):
         # end_point = np.array([-0.49474198, -0.67771703, -4.46762366,  # leg 0
         #                       0.49474198, 0.67771703, 4.46762366,  # leg 1
@@ -39,6 +41,14 @@ class Grasper:
                                                                    (-1 + leg_index * 2) * 0.6 * t * 0.5]
         return traj
 
+    # 关节空间调节俯仰
+    def adjust_base_traj(self, init_pos, step, leg_index):
+        dt = self.dt
+        t = step * dt
+        traj = init_pos[(leg_index * 3)] + ((-1) ** leg_index) * 0.1 * t
+        return traj
+
+    # 三次多项式插值轨迹规划
     def cubic_interpolation_traj(self, init_pos, step):
         dt = 1 / 800
         t = step * dt
@@ -55,6 +65,7 @@ class Grasper:
         traj = np.array(q).reshape(-1, 3)
         return traj
 
+    # 五次多项式插值轨迹规划
     def polynomial_interpolation_path(self, init_pos, step):
         dt = 1 / 800
         t = step * dt
@@ -65,7 +76,7 @@ class Grasper:
         end_a = np.array([0, 0, 0])
         initial_pos = init_pos[0: 3]
         # end_pos = np.array([-0.53168775, -2.82699917, -2.37131523])
-        end_pos = np.array([-0.46336971, -2.26790552, -1.968744])
+        end_pos = np.array([-0.46336971, -2.26790552, -2.2])  # -1.968744
         a0 = initial_pos
         a1 = initial_v
         a2 = initial_a / 2

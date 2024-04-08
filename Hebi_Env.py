@@ -63,30 +63,45 @@ class HebiEnv:
 
                         # 保存数据
                         data = [jointspace_command2hebi, feedback_position, feedback_velocity, feedback_effort]
-                        file_path = "data.txt"
-                        with open(file_path, 'a') as file:
-                            for item in data:
-                                file.write("%s\n" % item)
+                        with open("./data/data.txt", 'a') as file:
+                            data_str = str(data)
+                            file.write(data_str + '\n')
 
                         # jointspace_command2hebi = np.array(jointspace_command2hebi)
-                        # with open("/data/jointspace_command2hebi.txt", 'a') as file:
+                        # with open("./data/jointspace_command2hebi.txt", 'a') as file:
                         #     for item in jointspace_command2hebi:
                         #         file.write("%s\n" % item)
                         #
                         # feedback_position = np.array(feedback_position)
-                        # with open("/data/feedback_position.txt", 'a') as file:
+                        # with open("./data/feedback_position.txt", 'a') as file:
                         #     for item in feedback_position:
                         #         file.write("%s\n" % item)
                         #
                         # feedback_velocity = np.array(feedback_velocity)
-                        # with open("/data/feedback_velocity.txt", 'a') as file:
+                        # with open("./data/feedback_velocity.txt", 'a') as file:
                         #     for item in feedback_velocity:
                         #         file.write("%s\n" % item)
                         #
                         # feedback_effort = np.array(feedback_effort)
-                        # with open("/data/feedback_effort.txt", 'a') as file:
+                        # with open("./data/feedback_effort.txt", 'a') as file:
                         #     for item in feedback_effort:
                         #         file.write("%s\n" % item)
+
+                        jointspace_command2hebi = np.array(jointspace_command2hebi)
+                        with open("./data/jointspace_command2hebi.txt", 'a') as file:
+                            file.write(str(jointspace_command2hebi) + '\n')
+
+                        feedback_position = np.array(feedback_position)
+                        with open("./data/feedback_position.txt", 'a') as file:
+                            file.write(str(feedback_position) + '\n')
+
+                        feedback_velocity = np.array(feedback_velocity)
+                        with open("./data/feedback_velocity.txt", 'a') as file:
+                            file.write(str(feedback_velocity) + '\n')
+
+                        feedback_effort = np.array(feedback_effort)
+                        with open("./data/feedback_effort.txt", 'a') as file:
+                            file.write(str(feedback_effort) + '\n')
 
                         break
                     except:
@@ -109,6 +124,22 @@ class HebiEnv:
                 joint_position = [state[0] for state in joint_states]
                 joint_velocity = [state[1] for state in joint_states]
                 joint_torques = [state[2] for state in joint_states]
+
+                # joint_position = np.array(joint_position)
+                with open("./data/joint_position.txt", 'a') as file:
+                    for item in joint_position:
+                        file.write("%s\n" % item)
+
+                joint_velocity = np.array(joint_velocity)
+                with open("./data/joint_velocity.txt", 'a') as file:
+                    for item in joint_velocity:
+                        file.write("%s\n" % item)
+
+                joint_torques = np.array(joint_torques)
+                with open("./data/joint_torques.txt", 'a') as file:
+                    for item in joint_torques:
+                        file.write("%s\n" % item)
+
                 p.stepSimulation()
                 if self.camerafollow:
                     self._cam_follow()
@@ -220,7 +251,7 @@ class HebiEnv:
             pos, orn = p.getBasePositionAndOrientation(self.HebiID)
             return pos, p.getEulerFromQuaternion(orn)
         cam_pos, cam_orn = _get_body_pose(self)
-        p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=-225, cameraPitch=-35, cameraTargetPosition=cam_pos)
+        p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=-180, cameraPitch=-35, cameraTargetPosition=cam_pos)
 
     def _add_reference_line(self):
         '''

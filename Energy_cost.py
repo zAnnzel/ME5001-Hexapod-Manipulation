@@ -44,6 +44,3 @@ def compute_energy(start_time, end_time, t):
     # Integrate the power over time to obtain energy consumption
     result, _ = quad(power, start_time, end_time)
     return result
-
-
-

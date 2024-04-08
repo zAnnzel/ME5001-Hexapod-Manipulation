@@ -11,7 +11,7 @@ Run `test_goto.py` to watch Hebi move to a specific position
 ## Reselt
 <div align="center">
    <img src="simulation.gif" width="720"/>
-</div>
+</div>gr
 
 
 ## Hebi configuration

@@ -10,6 +10,7 @@ from scipy.integrate import quad
 import time
 import imageio
 import wandb
+import math
 
 # wandb.init(project='Hebi-test', name='force-torque')
 
@@ -211,6 +212,9 @@ class Hebi:
             current_pos[:, leg_index] = self.trajplanner.pose2pos(self.current_pose[:, leg_index], leg_index)
         return current_pos
 
+
+    ## hexapod抓取物体
+    # 使用逆运动学让机器人的单条腿移动到指定位置
     def move_leg(self, waypoints, time_vector, total_time):
         self.is_moving = True
         self.time_vector = time_vector
@@ -264,12 +268,42 @@ class Hebi:
         #              0.08, -0.08, 0.4, -0.4, 0.4, -0.4,
         #              0, 0, -0.12, -0.12, -0.12, -0.12]
         middle_pos_4 = np.hstack((0.7, 0.7, init_pos[2:6], 0.3, -0.3, init_pos[8:12], 0, 0, init_pos[14:18]))
-        end_pos_4 = np.hstack((0.85, 0.85, init_pos[2:6], 0.1, -0.1, init_pos[8:12], 0, 0, init_pos[14:18]))
+        end_pos_4 = np.hstack((0.83, 0.83, init_pos[2:6], 0.1, -0.1, init_pos[8:12], 0.1, 0.1, init_pos[14:18]))
         waypoints_12 = np.vstack((init_pos, middle_pos_4, end_pos_4))
         time_vector_2 = [0, 1, 2]
         self.move_leg(waypoints_12, time_vector_2, total_time=2)
         print(end_pos_3, end_pos_4)
         return end_pos_3, end_pos_4
+
+    # 调整base姿态
+    def adjust_base(self, lift_pos, angle):
+        self.is_moving = True
+        timestep = round(math.radians(angle) / 0.005)  # 0.01
+        lift_pos= np.array(lift_pos)
+        _, pos = solveIK(lift_pos.reshape(3, 6))
+        init_point = np.array(pos)
+        base_traj = []
+
+        for step in range(timestep):
+            traj_ = init_point + np.array([0, 0, 0, 0, 0, 0,
+                                           0, (step * 0.0025), (step * 0.0025), 0, (step * -0.0025), (step * -0.0025),
+                                           0, (step * -0.005), (step * -0.0025), 0, (step * 0.005), (step * 0.0025)])
+            base_traj.append(traj_)
+            self.env.step(traj_)
+
+        return base_traj[-1]
+
+    # 夹物体
+    def grasp_object(self, adjust_pos):
+        init_pos = adjust_pos
+        # end_pos_4 = [0.87, 0.87, 0.23, 0.23, -0.4, -0.4,
+        #              0.08, -0.08, 0.4, -0.4, 0.4, -0.4,
+        #              0, 0, -0.12, -0.12, -0.12, -0.12]
+        middle_pos_4 = np.hstack((0.7, 0.7, init_pos[2:6], 0.3, -0.3, init_pos[8:12], 0, 0, init_pos[14:18]))
+        end_pos_4 = np.hstack((0.83, 0.83, init_pos[2:6], 0.1, -0.1, init_pos[8:12], 0.1, 0.1, init_pos[14:18]))
+        waypoints_12 = np.vstack((init_pos, middle_pos_4, end_pos_4))
+        time_vector_2 = [0, 1, 2]
+        self.move_leg(waypoints_12, time_vector_2, total_time=2)
 
     # 支撑腿复位
     def reset_leg(self, init_pos):
@@ -302,6 +336,7 @@ class Hebi:
         waypoints_34 = np.vstack((init_pos, middle_pos, end_pos))
         self.move_leg(waypoints_34, time_vector_1, total_time=1)
 
+    # 在工作空间规划举起物体的路径
     def move_front_leg_workspace(self, timestep):
         self.is_moving = True
         self.timestep = timestep
@@ -317,14 +352,14 @@ class Hebi:
             self.env.step(traj_,sleep=0.02)
         return True
 
-    # 举起物体
-    def lift_leg_jointspace(self, lift_pos, timestep):
+    # 在关节空间规划举起物体的路径
+    def lift_leg_jointspace(self, base_pos, timestep):
         self.is_moving = True
         self.timestep = timestep
-        lift_pos= np.array(lift_pos)
-        init_jointspace, pos = solveIK(lift_pos.reshape(3, 6))
-        init_point = np.array(pos)
-        # init_point = np.hstack((pos[0], pos[4], pos[2:4], pos[1], pos[5:18]))
+        # lift_pos= np.array(lift_pos)
+        # init_jointspace, pos = solveIK(lift_pos.reshape(3, 6))
+        # init_point = np.array(pos)
+        init_point = base_pos
         traj_1 = np.zeros((timestep, 3))
         joint1_forces = []
         joint1_torques = []
@@ -335,9 +370,9 @@ class Hebi:
         trajs = []
 
         for step in range(timestep):
-            # traj_1[step] = self.grasper.cubic_interpolation_traj(init_point, step)  # 三次多项式插值
+            traj_1[step] = self.grasper.cubic_interpolation_traj(init_point, step)  # 三次多项式插值
             # traj_1[step] = self.grasper.polynomial_interpolation_path(init_point, step)  # 五次多项式插值
-            traj_1[step] = self.grasper.front_leg_jointspace_traj(init_point, step, leg_index=0)  # 能量函数
+            # traj_1[step] = self.grasper.front_leg_jointspace_traj(init_point, step, leg_index=0)  # 能量函数
             # traj_dt = traj_1[step] - traj_1[step-1]
             # traj_dt= (trajectory(t + dt)[0] - x) / dt, (trajectory(t + dt)[1] - y) / dt, (trajectory(t + dt)[2] - z) / dt
             traj_ = np.hstack((traj_1[step], (-1) * traj_1[step], init_point[6:18]))
@@ -381,6 +416,7 @@ class Hebi:
         print(trajs[-1])
         return trajs[-1]
 
+    # 放下腿
     def release_leg_jointspace(self, liftup_pos, timestep):
         self.is_moving = True
         self.timestep = timestep
@@ -410,11 +446,16 @@ if __name__ == '__main__':
     leg_4_pos = [0.23, 0.4]  # leg 3
     leg_5_pos = [-0.4, 0.4]  # leg 6
     stand_pos, lift_pos = hebi.adjust_leg(leg_4_pos, leg_5_pos)
+    print(lift_pos)
+
+    base_pos = hebi.adjust_base(lift_pos, 15)
+    print(base_pos)
 
     input("按回车键继续...")
 
     # 举到背上
-    liftup_pos = hebi.lift_leg_jointspace(lift_pos, timestep=800)
+    # liftup_pos = hebi.lift_leg_jointspace(lift_pos, timestep=800)
+    liftup_pos = hebi.lift_leg_jointspace(base_pos, timestep=800)
 
     input("按回车键继续...")
 
