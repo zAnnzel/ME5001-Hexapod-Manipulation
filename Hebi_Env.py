@@ -67,26 +67,6 @@ class HebiEnv:
                             data_str = str(data)
                             file.write(data_str + '\n')
 
-                        # jointspace_command2hebi = np.array(jointspace_command2hebi)
-                        # with open("./data/jointspace_command2hebi.txt", 'a') as file:
-                        #     for item in jointspace_command2hebi:
-                        #         file.write("%s\n" % item)
-                        #
-                        # feedback_position = np.array(feedback_position)
-                        # with open("./data/feedback_position.txt", 'a') as file:
-                        #     for item in feedback_position:
-                        #         file.write("%s\n" % item)
-                        #
-                        # feedback_velocity = np.array(feedback_velocity)
-                        # with open("./data/feedback_velocity.txt", 'a') as file:
-                        #     for item in feedback_velocity:
-                        #         file.write("%s\n" % item)
-                        #
-                        # feedback_effort = np.array(feedback_effort)
-                        # with open("./data/feedback_effort.txt", 'a') as file:
-                        #     for item in feedback_effort:
-                        #         file.write("%s\n" % item)
-
                         jointspace_command2hebi = np.array(jointspace_command2hebi)
                         with open("./data/jointspace_command2hebi.txt", 'a') as file:
                             file.write(str(jointspace_command2hebi) + '\n')
@@ -230,7 +210,7 @@ class HebiEnv:
         :return: None
         '''
         # parameters
-        self.h = 0.12  # 0.12  body height
+        self.h = 0.15  # 0.12  body height
         self.eePos = np.array([[0.51589,    0.51589,   0.0575,     0.0575,     -0.45839,   -0.45839],
                                 [0.23145,   -0.23145,   0.5125,     -0.5125,    0.33105,    -0.33105],
                                 [-self.h,   -self.h,    -self.h,    -self.h,    -self.h,    -self.h]]) # neutral position for the robot
@@ -251,7 +231,7 @@ class HebiEnv:
             pos, orn = p.getBasePositionAndOrientation(self.HebiID)
             return pos, p.getEulerFromQuaternion(orn)
         cam_pos, cam_orn = _get_body_pose(self)
-        p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=-180, cameraPitch=-35, cameraTargetPosition=cam_pos)
+        p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=-180, cameraPitch=-15, cameraTargetPosition=cam_pos)
 
     def _add_reference_line(self):
         '''

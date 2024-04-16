@@ -107,3 +107,23 @@ wandb.finish()
 # for i, value in enumerate(joint_1_velocity):
 #     # 使用 wandb.log 函数记录数据点
 #     wandb.log({"joint_1_effort": value}, step=i)
+
+def read_data(file_name, data_type, joint_index):
+    arrays = {}
+    array_name = f"{data_type}_{joint_index}"
+    datas = []
+    with open("./data-15-五次/" + file_name, "r") as file:
+        content = file.read()
+        parts = content.split('[')
+
+        for part in parts:
+            if ']' in part:
+                match = part.split(']')[0]
+                numbers = [float(num) for num in match.split(' ') if num.strip()]
+                datas.append(numbers)
+
+    lines = [row[joint_index] for row in datas]
+    arrays[array_name] = np.array(lines)
+    for i, value in enumerate(arrays[array_name]):
+        # 使用 wandb.log 函数记录数据点
+        wandb.log({f"{data_type}_{joint_index}": value}, step=i)
