@@ -231,7 +231,7 @@ class HebiEnv:
             pos, orn = p.getBasePositionAndOrientation(self.HebiID)
             return pos, p.getEulerFromQuaternion(orn)
         cam_pos, cam_orn = _get_body_pose(self)
-        p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=-180, cameraPitch=-15, cameraTargetPosition=cam_pos)
+        p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=-225, cameraPitch=-30, cameraTargetPosition=cam_pos)
 
     def _add_reference_line(self):
         '''

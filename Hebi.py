@@ -370,7 +370,7 @@ class Hebi:
         trajs = []
 
         for step in range(timestep):
-            traj_1[step] = self.grasper.cubic_interpolation_traj(init_point, step)  # 三次多项式插值
+            # traj_1[step] = self.grasper.cubic_interpolation_traj(init_point, step)  # 三次多项式插值
             # traj_1[step] = self.grasper.polynomial_interpolation_path(init_point, step)  # 五次多项式插值
             # traj_1[step] = self.grasper.front_leg_jointspace_traj(init_point, step, leg_index=0)  # 能量函数
             # traj_dt = traj_1[step] - traj_1[step-1]

@@ -1,5 +1,6 @@
 import wandb
 import numpy as np
+import math
 
 # 初始化Wandb
 wandb.init(project='Hebi-robot', name='cubic', config={})
@@ -30,7 +31,7 @@ def plot_data(file_name, data_type, joint_index):
     arrays = {}
     array_name = f"{data_type}_{joint_index}"
     datas = []
-    with open("./data-15-五次/" + file_name, "r") as file:
+    with open("./data-15-三次/" + file_name, "r") as file:
         content = file.read()
         parts = content.split('[')
 
@@ -48,7 +49,7 @@ def plot_data(file_name, data_type, joint_index):
 
 
 # plot_data("feedback_effort.txt", "feedback_effort", 0)
-plot_data("feedback_velocity.txt", "feedback_velocity", 0)
+# plot_data("feedback_velocity.txt", "feedback_velocity", 0)
 
 # 绘制曲线
 # wandb.log({
@@ -58,10 +59,6 @@ plot_data("feedback_velocity.txt", "feedback_velocity", 0)
 #     "V2": joint_2_velocity,
 #     # "Effort": feedback_effort
 # })
-
-# 关闭Wandb
-wandb.finish()
-
 
 # # 读取data.txt
 # with open("data.txt", "r") as file:
@@ -112,7 +109,7 @@ def read_data(file_name, data_type, joint_index):
     arrays = {}
     array_name = f"{data_type}_{joint_index}"
     datas = []
-    with open("./data-15-五次/" + file_name, "r") as file:
+    with open("./data-15-三次/" + file_name, "r") as file:
         content = file.read()
         parts = content.split('[')
 
@@ -124,6 +121,28 @@ def read_data(file_name, data_type, joint_index):
 
     lines = [row[joint_index] for row in datas]
     arrays[array_name] = np.array(lines)
-    for i, value in enumerate(arrays[array_name]):
-        # 使用 wandb.log 函数记录数据点
-        wandb.log({f"{data_type}_{joint_index}": value}, step=i)
+    return arrays[array_name]
+
+
+torque_joint_1 = read_data("feedback_effort.txt", "feedback_effort", 0)
+torque_joint_2 = read_data("feedback_effort.txt", "feedback_effort", 1)
+torque_joint_3 = read_data("feedback_effort.txt", "feedback_effort", 2)
+velocity_joint_1 = read_data("feedback_velocity.txt", "feedback_velocity", 0)
+velocity_joint_2 = read_data("feedback_velocity.txt", "feedback_velocity", 0)
+velocity_joint_3 = read_data("feedback_velocity.txt", "feedback_velocity", 0)
+
+torque_joint_1 = np.array(torque_joint_1)
+torque_joint_2 = np.array(torque_joint_2)
+torque_joint_3 = np.array(torque_joint_3)
+velocity_joint_1 = np.array(velocity_joint_1)
+velocity_joint_2 = np.array(velocity_joint_2)
+velocity_joint_3 = np.array(velocity_joint_3)
+energy_leg_1 = 40 * (abs(torque_joint_1 * velocity_joint_1) + abs(torque_joint_2 * velocity_joint_2) + abs(torque_joint_3 * velocity_joint_3))
+
+
+for i, value in enumerate(energy_leg_1):
+    # 使用 wandb.log 函数记录数据点
+    wandb.log({f"Energy": value}, step=i)
+
+# 关闭Wandb
+wandb.finish()

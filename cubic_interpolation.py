@@ -59,54 +59,56 @@ def polynomial_interpolation_path(initial_pos, end_pos, timelen):
     return traj, time, velocity, acceleration
 
 
-q0 = np.array([-0.49188775, 0.15800083,  0.01668477])
-q1 = np.array([-0.53168775, -2.82699917, -2.37131523])
-traj_, time_, velocity_, acceleration_ = cubic_interpolate_path(q0, q1, timelen=1)
+# q0 = np.array([-0.49188775, 0.15800083,  0.01668477])
+# q1 = np.array([-0.53168775, -2.82699917, -2.37131523])
+# traj_, time_, velocity_, acceleration_ = cubic_interpolate_path(q0, q1, timelen=1)
 
 q0_array = np.array([-0.49188775, 0.15800083,  0.01668477])
 q1_array = np.array([-0.53168775, -2.82699917, -2.37131523])
 traj_2, time_2, velocity_2, acceleration_2 = polynomial_interpolation_path(q0_array, q1_array, timelen=1)
 
-# Plot the cubic interpolate trajectory
-fig = plt.figure()
-fig.suptitle('Robotic Arm Path Interpolation in Joint Space')
-ax = fig.add_subplot(221, projection='3d')
-ax.plot(traj_[:, 0], traj_[:, 1])
-ax.set_xlabel('Joint 1 Angle')
-ax.set_ylabel('Joint 2 Angle')
-ax.set_zlabel('Joint 3 Angle')
-
-bx = fig.add_subplot(222)
-bx.plot(time_, traj_[:, 0])
-bx.set_xlabel('t')
-bx.set_ylabel('Joint 1 Angle')
-
-cx = fig.add_subplot(223)
-cx.plot(time_, velocity_)
-cx.set_xlabel('t')
-cx.set_ylabel('Velocity')
-
-dx = fig.add_subplot(224)
-dx.plot(time_, acceleration_)
-dx.set_xlabel('t')
-dx.set_ylabel('Acceleration')
-
-plt.show()
+# # Plot the cubic interpolate trajectory
+# fig = plt.figure()
+# fig.suptitle('Robotic Arm Path Interpolation in Joint Space')
+# ax = fig.add_subplot(221, projection='3d')
+# ax.plot(traj_[:, 0], traj_[:, 1])
+# ax.set_xlabel('Joint 1 Angle')
+# ax.set_ylabel('Joint 2 Angle')
+# ax.set_zlabel('Joint 3 Angle')
+#
+# bx = fig.add_subplot(222)
+# bx.plot(time_, traj_[:, 0])
+# bx.set_xlabel('t')
+# bx.set_ylabel('Joint 1 Angle')
+#
+# cx = fig.add_subplot(223)
+# cx.plot(time_, velocity_)
+# cx.set_xlabel('t')
+# cx.set_ylabel('Velocity')
+#
+# dx = fig.add_subplot(224)
+# dx.plot(time_, acceleration_)
+# dx.set_xlabel('t')
+# dx.set_ylabel('Acceleration')
+#
+# plt.show()
 
 
 # Plot the polynomial interpolate trajectory
-fig2 = plt.figure()
+fig2 = plt.figure(figsize=(8,8))
+fig2.subplots_adjust(hspace=0.5, wspace=0.5)
 fig2.suptitle('Robotic Arm Path Interpolation in Joint Space')
 ax = fig2.add_subplot(221, projection='3d')
+# fig2.tight_layout(h_pad=3)
 ax.plot(traj_2[:, 0], traj_2[:, 1])
 ax.set_xlabel('Joint 1 Angle')
 ax.set_ylabel('Joint 2 Angle')
 ax.set_zlabel('Joint 3 Angle')
 
 bx = fig2.add_subplot(222)
-bx.plot(time_2, traj_2[:, 0])
+bx.plot(time_2, traj_2)
 bx.set_xlabel('t')
-bx.set_ylabel('Joint 1 Angle')
+bx.set_ylabel('Joint Angle')
 
 cx = fig2.add_subplot(223)
 cx.plot(time_2, velocity_2)

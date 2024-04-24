@@ -4,6 +4,7 @@ import pybullet as p
 from Hebi_Env import HebiEnv
 import numpy as np
 from functions import trans, solveIK, solveFK
+import functions as f
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
 import time
@@ -11,11 +12,11 @@ import imageio
 import wandb
 import math
 
-# wandb.init(project='Hebi-test', name='force-torque')
+wandb.init(project='Hebi-test', name='optimizer')
 
 init_leg = np.array([0.51589, 0.51589, 0.0575, 0.0575, -0.45839, -0.45839,
                     0.23145, -0.23145, 0.5125, -0.5125, 0.33105, -0.33105,
-                    -0.15, -0.15, -0.15, -0.15, -0.15, -0.15])
+                    -0.12, -0.12, -0.12, -0.12, -0.12, -0.12])
 
 class Hebi:
     def __init__(self, visualiser=True, camerafollow=True, real_robot_control=False, pybullet_on=True):
@@ -328,7 +329,70 @@ class Hebi:
         return True
 
     # 在关节空间规划举起物体的路径
-    def lift_leg_jointspace(self, base_pos, timestep):
+    # def lift_leg_jointspace(self, base_pos, timestep):
+    #     self.is_moving = True
+    #     self.timestep = timestep
+    #     lift_pos= np.array(base_pos)
+    #     init_jointspace, pos = solveIK(lift_pos.reshape(3, 6))
+    #     init_point = np.array(pos)
+    #     # init_point = base_pos
+    #     traj_1 = np.zeros((timestep, 3))
+    #     joint1_forces = []
+    #     joint1_torques = []
+    #     joint2_forces = []
+    #     joint2_torques = []
+    #     joint3_forces = []
+    #     joint3_torques = []
+    #     trajs = []
+    #
+    #     for step in range(timestep):
+    #         # traj_1[step] = self.grasper.cubic_interpolation_traj(init_point, step)  # 三次多项式插值
+    #         # traj_1[step] = self.grasper.polynomial_interpolation_path(init_point, step)  # 五次多项式插值
+    #         traj_1[step] = self.grasper.front_leg_jointspace_traj(init_point, step, leg_index=0)  # 能量函数
+    #         # traj_dt = traj_1[step] - traj_1[step-1]
+    #         # traj_dt= (trajectory(t + dt)[0] - x) / dt, (trajectory(t + dt)[1] - y) / dt, (trajectory(t + dt)[2] - z) / dt
+    #         traj_ = np.hstack((traj_1[step], (-1) * traj_1[step], init_point[6:18]))
+    #         trajs.append(traj_)
+    #         position, velocity, torque = self.env.step(traj_)
+    #         joint1_torque = torque[0]
+    #         joint2_torque = torque[1]
+    #         joint3_torque = torque[2]
+    #
+    #         joint1_force = np.linalg.norm(joint1_torque[0:3])
+    #         joint1_torque = np.linalg.norm(joint1_torque[3:6])
+    #         joint2_force = np.linalg.norm(joint2_torque[0:3])
+    #         joint2_torque = np.linalg.norm(joint2_torque[3:6])
+    #         joint3_force = np.linalg.norm(joint3_torque[0:3])
+    #         joint3_torque = np.linalg.norm(joint3_torque[3:6])
+    #
+    #         power = abs(joint1_torque) * abs(velocity[0]) + abs(joint2_torque) * abs(velocity[1]) + abs(joint3_force) * abs(velocity[2])
+    #         # energy, _ = quad(power, start_time=0, end_time=1)
+    #
+    #         joint2_forces.append(joint2_force)
+    #         joint2_torques.append(joint2_torque)
+    #         # wandb.log({
+    #         #     "F1": joint1_force,
+    #         #     "F2": joint2_force,
+    #         #     "F3": joint3_force,
+    #         #     "T1": joint1_torque,
+    #         #     "T2": joint2_torque,
+    #         #     "T3": joint3_torque,
+    #         #     "Energy2": power
+    #         # })
+    #     joint2_forces = np.array(joint2_forces)
+    #     joint2_torques = np.array(joint2_torques)
+    #     # wandb.finish()
+    #     plt.plot(range(timestep), joint2_forces, label='Force')
+    #     plt.plot(range(timestep), joint2_torques, label='Torque')
+    #     plt.xlabel('Simulation Step')
+    #     plt.ylabel('Joint Torque(Nm)')
+    #     plt.legend(loc='upper right')  # Display the legend
+    #     plt.title('Joint Torque over Simulation Steps')
+    #     plt.show()
+    #     print(trajs[-1])
+    #     return trajs[-1]
+
+    def lift_leg_jointspace(self, base_pos, traj_type, timestep):
         self.is_moving = True
         self.timestep = timestep
         lift_pos= np.array(base_pos)
@@ -342,12 +406,18 @@ class Hebi:
         joint2_torques = []
         joint3_forces = []
         joint3_torques = []
+        energy = []
         trajs = []
+        total_energy = 0
 
         for step in range(timestep):
-            # traj_1[step] = self.grasper.cubic_interpolation_traj(init_point, step)  # 三次多项式插值
-            # traj_1[step] = self.grasper.polynomial_interpolation_path(init_point, step)  # 五次多项式插值
-            traj_1[step] = self.grasper.front_leg_jointspace_traj(init_point, step, leg_index=0)  # 能量函数
+            if traj_type == 'cubic':
+                traj_1[step] = self.grasper.cubic_interpolation_traj(init_point, step)  # 三次多项式插值
+            elif traj_type == 'fifth':
+                traj_1[step] = self.grasper.polynomial_interpolation_path(init_point, step)  # 五次多项式插值
+            elif traj_type == 'opt':
+                traj_1[step] = self.grasper.front_leg_jointspace_traj(init_point, step, leg_index=0)  # 能量函数
+
             # traj_dt = traj_1[step] - traj_1[step-1]
             # traj_dt= (trajectory(t + dt)[0] - x) / dt, (trajectory(t + dt)[1] - y) / dt, (trajectory(t + dt)[2] - z) / dt
             traj_ = np.hstack((traj_1[step], (-1) * traj_1[step], init_point[6:18]))
@@ -366,29 +436,40 @@ class Hebi:
 
             power = abs(joint1_torque) * abs(velocity[0]) + abs(joint2_torque) * abs(velocity[1]) + abs(joint3_force) * abs(velocity[2])
             # energy, _ = quad(power, start_time=0, end_time=1)
+            total_energy += power
 
             joint2_forces.append(joint2_force)
             joint2_torques.append(joint2_torque)
-            # wandb.log({
-            #     "F1": joint1_force,
-            #     "F2": joint2_force,
-            #     "F3": joint3_force,
-            #     "T1": joint1_torque,
-            #     "T2": joint2_torque,
-            #     "T3": joint3_torque,
-            #     "Energy2": power
-            # })
+            energy.append(power)
+
+            wandb.log({
+                # "F1": joint1_force,
+                # "F2": joint2_force,
+                # "F3": joint3_force,
+                # "Torque1": joint1_torque,
+                "Torque (Nm)": joint2_torque,
+                "Velocity (rad/s)": velocity[2],
+                # "T3": joint3_torque,
+                "Energy (J)": power
+            })
         joint2_forces = np.array(joint2_forces)
         joint2_torques = np.array(joint2_torques)
-        # wandb.finish()
-        plt.plot(range(timestep), joint2_forces, label='Force')
+        wandb.finish()
+        plt.plot(range(timestep), joint2_forces, label='Energy')
+        plt.xlabel('Simulation Step')
+        plt.ylabel('Total Energy (J)')
+        plt.legend(loc='upper right')  # Display the legend
+        plt.title('Energy consumption over Simulation Steps')
+        plt.show()
+
         plt.plot(range(timestep), joint2_torques, label='Torque')
         plt.xlabel('Simulation Step')
-        plt.ylabel('Joint Torque(Nm)')
+        plt.ylabel('Joint Torque (Nm)')
         plt.legend(loc='upper right')  # Display the legend
         plt.title('Joint Torque over Simulation Steps')
         plt.show()
         print(trajs[-1])
+        print('Total Energy:', total_energy)
         return trajs[-1]
 
     # 放下腿
@@ -437,6 +518,32 @@ class Hebi:
         waypoints_34 = np.vstack((init_pos, middle_pos, end_pos))
         self.move_leg(waypoints_34, time_vector_1, total_time=1)
 
+    def whole_grasp(self, leg_4_pos, leg_5_pos, base_adjust, traj_type):
+
+        stand_pos = self.adjust_leg(leg_4_pos, leg_5_pos)
+
+        # 调整base角度
+        base_pos = self.adjust_base(stand_pos, base_adjust[0])
+
+        # 举起前腿取物体
+        lift_pos = self.grasp_object(base_pos)
+        # input("按回车键继续...")
+
+        # 举到背上
+        liftup_pos = self.lift_leg_jointspace(lift_pos, traj_type, timestep=730)
+        input("按回车键继续...")
+
+        # 腿放下
+        end_joint = self.release_leg_jointspace(liftup_pos, timestep=150)
+
+        end_pose = f.solveFK(end_joint)
+        waypoints = np.vstack((end_pose.reshape(1, 18), stand_pos))
+        time_vector = [0, 1]
+        self.move_leg(waypoints, time_vector, total_time=1)
+
+        # 腿复位
+        self.reset_leg(stand_pos)
+
 
 if __name__ == '__main__':
     from Hebi_test import Hebi
@@ -445,37 +552,16 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import functions as f
 
-    hebi = Hebi(real_robot_control=1, pybullet_on=1)
+    hebi = Hebi(real_robot_control=0, pybullet_on=1)
     hebi.env.camerafollow = 1
 
-    # 调整支撑腿位置
-    leg_4_pos = [0.23, 0.4]  # leg 3
-    leg_5_pos = [-0.4, 0.4]  # leg 6
-    stand_pos = hebi.adjust_leg(leg_4_pos, leg_5_pos)
-
-    # 调整base角度
-    base_pos = hebi.adjust_base(stand_pos, 15)
-
-    # 举起前腿取物体
-    lift_pos = hebi.grasp_object(base_pos)
-
-    input("按回车键继续...")
-
-    # 举到背上
-    liftup_pos = hebi.lift_leg_jointspace(lift_pos, timestep=730)
-
-    input("按回车键继续...")
-
-    # 腿放下
-    end_joint = hebi.release_leg_jointspace(liftup_pos, timestep=150)
-
-    end_pose = f.solveFK(end_joint)
-    waypoints = np.vstack((end_pose.reshape(1, 18), stand_pos))
-    time_vector = [0, 1]
-    hebi.move_leg(waypoints, time_vector, total_time=1)
-
-    # 腿复位
-    hebi.reset_leg(stand_pos)
+    # Define the position(m) of the support legs
+    leg_3_4_pos = [0.23, 0.4]  # [0.25, 0.4]  # leg 3  [0.23, 0.4]
+    leg_5_6_pos = [-0.4, 0.4]  # [-0.35, 0.4]  # leg 6  [-0.4, 0.4]
+    # Define the base adjust angle(degree) and movement(m)
+    base_adjust = [5.739, 0.005]
+    # trajectory type: cubic, fifth, opt
+    hebi.whole_grasp(leg_3_4_pos, leg_5_6_pos, base_adjust, traj_type='cubic')
 
     time.sleep(2)
 

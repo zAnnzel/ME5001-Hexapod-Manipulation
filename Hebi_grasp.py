@@ -55,7 +55,7 @@ class Grasper:
         initial_v = np.array([0, 0, 0])
         end_v = np.array([0, 0, 0])
         initial_pos = init_pos[0: 3]
-        end_pos = np.array([-0.46336971, -2.26790552, -1.968744])
+        end_pos = np.array([-0.46143309, -2.48169756, -2.7767164])
         t1 = 1
         a0 = initial_pos
         a1 = initial_v
@@ -75,8 +75,7 @@ class Grasper:
         initial_a = np.array([0, 0, 0])
         end_a = np.array([0, 0, 0])
         initial_pos = init_pos[0: 3]
-        # end_pos = np.array([-0.53168775, -2.82699917, -2.37131523])
-        end_pos = np.array([-0.46336971, -2.26790552, -2.2])  # -1.968744
+        end_pos = np.array([-0.46143309, -2.48169756, -2.7767164])
         a0 = initial_pos
         a1 = initial_v
         a2 = initial_a / 2
